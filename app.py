@@ -58,7 +58,7 @@ def receive()
         if text.startswith(ADD)
             _, name, time_str = text.split()
             medicines.append({name name, time time_str})
-            send_message(f✅ Added {name} at {time_str})
+            send_message(f"✅ Added {name} at {time_str}")
 
         if text == LIST
             reply = n.join(
