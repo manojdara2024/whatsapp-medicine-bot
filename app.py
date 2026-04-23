@@ -155,7 +155,7 @@ def reminder_loop():
 
         time.sleep(30)
 
-Thread(target=reminder_loop, daemon=True).start()
+#Thread(target=reminder_loop, daemon=True).start()
 
 @app.route("/", methods=["GET"])
 def home():
