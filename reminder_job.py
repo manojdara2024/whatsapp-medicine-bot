@@ -1,4 +1,5 @@
 import os
+print("✅ reminder_job started")
 import psycopg
 import requests
 from datetime import datetime, timedelta
