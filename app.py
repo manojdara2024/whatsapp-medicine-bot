@@ -18,7 +18,7 @@ PHONE_NUMBER_ID = os.environ["WHATSAPP_PHONE_NUMBER_ID"]
 VERIFY_TOKEN = os.environ["WHATSAPP_VERIFY_TOKEN"]
 
 # Your dad's WhatsApp number in digits with country code (no +), e.g. 614XXXXXXXX
-DAD_NUMBER = os.environ["DAD_NUMBER"]
+Test_NUMBER = os.environ["Test_NUMBER"]
 
 TIMEZONE = os.environ.get("TIMEZONE", "Australia/Sydney")
 ALERT_OFFSET_MINUTES = int(os.environ.get("ALERT_OFFSET_MINUTES", "10"))
@@ -34,7 +34,7 @@ def send_message(text: str, to_number: str = None):
     """
     Sends a WhatsApp text message using Cloud API.
     """
-    to_number = to_number or DAD_NUMBER
+    to_number = to_number or Test_NUMBER
 
     url = f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/messages"
     headers = {
