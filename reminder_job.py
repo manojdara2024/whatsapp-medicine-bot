@@ -11,9 +11,9 @@ from zoneinfo import ZoneInfo
 TIMEZONE = os.getenv("TIMEZONE", "Australia/Sydney")
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-WHATSAPP_TOKEN = os.getenv("WHATSAPP_TOKEN")
-PHONE_NUMBER_ID = os.getenv("PHONE_NUMBER_ID")
-TO_PHONE = os.getenv("TO_PHONE")
+WHATSAPP_TOKEN = os.getenv("WHATSAPP_ACCESS_TOKEN")
+PHONE_NUMBER_ID = os.getenv("WHATSAPP_PHONE_NUMBER_ID")
+TO_PHONE = os.getenv("TEST_NUMBER")
 
 
 # ======================
