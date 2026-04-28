@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import requests
+import psycopg
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
