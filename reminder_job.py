@@ -34,7 +34,26 @@ def send_whatsapp(message: str):
     response = requests.post(url, headers=headers, json=payload)
     response.raise_for_status()
 
+def already_sent(conn, medicine_name, reminder_type, reminder_date):
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT 1
+            FROM public.reminder_log
+            WHERE medicine_name = %s
+              AND reminder_type = %s
+              AND reminder_date = %s
+            LIMIT 1
+        """, (medicine_name, reminder_type, reminder_date))
+        return cur.fetchone() is not None
 
+
+def log_sent(conn, medicine_name, reminder_type, reminder_date):
+    with conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO public.reminder_log
+            (medicine_name, reminder_type, reminder_date, sent_at)
+            VALUES (%s, %s, %s, now())
+        """, (medicine_name, reminder_type, reminder_date))
 # ======================
 # Job start
 # ======================
@@ -76,13 +95,25 @@ for name, med_time in medicines:
 
     before_dt = med_dt - timedelta(minutes=10)
 
-    if before_dt <= now < before_dt + WINDOW:
-        print(f"🔔 Sending 10‑min reminder for {name}")
-        send_whatsapp(f"⏰ Reminder: Take {name} in 10 minutes")
+    
+reminder_date = now.date()
 
-    elif med_dt <= now < med_dt + WINDOW:
-        print(f"💊 Sending exact‑time reminder for {name}")
+if before_dt <= now < before_dt + WINDOW:
+    if not already_sent(conn, name, "before", reminder_date):
+                print(f"🔔 Sending 10‑min reminder for {name}")
+        send_whatsapp(f"⏰ Reminder: Take {name} in 10 minutes")
+        log_sent(conn, name, "before", reminder_date)
+    else:
+        print(f"⏭️ Skipping duplicate BEFORE reminder for {name}")
+
+elif med_dt <= now < med_dt + WINDOW:
+    if not already_sent(conn, name, "exact", reminder_date):
+                print(f"💊 Sending exact‑time reminder for {name}")
         send_whatsapp(f"💊 Time to take {name}")
+        log_sent(conn, name, "exact", reminder_date)
+    else:
+        print(f"⏭️ Skipping duplicate EXACT reminder for {name}")
+
 
 
 print("✅ CRON RUN COMPLETE")
