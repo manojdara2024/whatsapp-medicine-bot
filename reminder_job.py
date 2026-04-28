@@ -50,7 +50,7 @@ with psycopg.connect(DATABASE_URL) as conn:
     with conn.cursor() as cur:
         cur.execute("""
             SELECT medicine_name, time
-            FROM reminders
+            FROM public.medicines
         """)
         medicines = cur.fetchall()
 
