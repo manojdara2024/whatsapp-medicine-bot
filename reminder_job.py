@@ -61,3 +61,30 @@ print("📋 medicines:", medicines)
 # ======================
 for name, med_time in medicines:
     try:
+        hh, mm = map(int, med_time.split(":"))
+    except ValueError:
+        print(f"⚠️ Skipping invalid time format for {name}: {med_time}")
+        continue
+
+    # medicine datetime today
+    med_dt = now.replace(
+        hour=hh,
+        minute=mm,
+        second=0,
+        microsecond=0
+    )
+
+    # 10‑minute‑before datetime
+    before_dt = med_dt - timedelta(minutes=10)
+
+    # ---- 10‑minute‑before window ----
+    if before_dt <= now < before_dt + timedelta(minutes=1):
+        print(f"🔔 Sending 10‑min reminder for {name}")
+        send_whatsapp(f"⏰ Reminder: Take {name} in 10 minutes")
+
+    # ---- exact‑time window ----
+    elif med_dt <= now < med_dt + timedelta(minutes=1):
+        print(f"💊 Sending exact‑time reminder for {name}")
+        send_whatsapp(f"💊 Time to take {name}")
+
+print("✅ CRON RUN COMPLETE")
