@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-import requests)import requests
+import requests
 # ------------------------
 ACCESS_TOKEN = os.environ["WHATSAPP_ACCESS_TOKEN"]
 PHONE_NUMBER_ID = os.environ["WHATSAPP_PHONE_NUMBER_ID"]
