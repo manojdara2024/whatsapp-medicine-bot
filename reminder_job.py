@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
-import datetime
 import os
 import requests
+
+from datetime import datetime
+
+print("🟢 CRON START UTC:", datetime.utcnow().isoformat())
+
 # ------------------------
 ACCESS_TOKEN = os.environ["WHATSAPP_ACCESS_TOKEN"]
 PHONE_NUMBER_ID = os.environ["WHATSAPP_PHONE_NUMBER_ID"]
@@ -83,7 +87,9 @@ def should_send(conn, day: str, med_name: str, dose_time: str, kind: str) -> boo
 # ------------------------
 # Main
 # ------------------------
+
 print("🟢 CRON START UTC:", datetime.utcnow().isoformat())
+
 
 now = datetime.now(ZoneInfo(TIMEZONE))
 today = now.date().isoformat()
