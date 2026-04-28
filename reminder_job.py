@@ -98,9 +98,9 @@ for name, med_time in medicines:
     
 reminder_date = now.date()
 
-if before_dt <= now < before_dt + WINDOW:
+if before_dt <= now < before_dt + WINDOW:   
     if not already_sent(conn, name, "before", reminder_date):
-                print(f"🔔 Sending 10‑min reminder for {name}")
+        print(f"🔔 Sending 10‑min reminder for {name}")
         send_whatsapp(f"⏰ Reminder: Take {name} in 10 minutes")
         log_sent(conn, name, "before", reminder_date)
     else:
@@ -108,12 +108,10 @@ if before_dt <= now < before_dt + WINDOW:
 
 elif med_dt <= now < med_dt + WINDOW:
     if not already_sent(conn, name, "exact", reminder_date):
-                print(f"💊 Sending exact‑time reminder for {name}")
+        print(f"💊 Sending exact‑time reminder for {name}")
         send_whatsapp(f"💊 Time to take {name}")
         log_sent(conn, name, "exact", reminder_date)
     else:
         print(f"⏭️ Skipping duplicate EXACT reminder for {name}")
-
-
 
 print("✅ CRON RUN COMPLETE")
