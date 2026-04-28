@@ -6,7 +6,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 print("✅ NEW VERSION RUNNING")
-print("🟢 CRON START UTC:", datetime.utcnow().isoformat())
+print("🟢 CRON START UTC:", datetime.now(ZoneInfo("UTC")).isoformat())
 
 
 # ------------------------
@@ -90,7 +90,7 @@ def should_send(conn, day: str, med_name: str, dose_time: str, kind: str) -> boo
 # Main
 # ------------------------
 
-print("🟢 CRON START UTC:", datetime.utcnow().isoformat())
+print("🟢 CRON START UTC:", datetime.now(ZoneInfo("UTC")).isoformat())
 
 
 now = datetime.now(ZoneInfo(TIMEZONE))
