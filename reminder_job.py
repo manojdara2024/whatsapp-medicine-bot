@@ -18,7 +18,7 @@ TIMEZONE = os.environ.get("TIMEZONE", "Australia/Sydney")
 GRAPH_VERSION = os.environ.get("GRAPH_VERSION", "v19.0")
 
 ALERT_OFFSET_MIN = int(os.environ.get("ALERT_OFFSET_MIN", "10"))  # 10-min before
-WINDOW_MIN = int(os.environ.get("WINDOW_MIN", "4"))               # safe for */2 cron drift
+WINDOW_MIN = int(os.environ.get("WINDOW_MIN", "6"))               # safe for */2 cron drift
 WINDOW = timedelta(minutes=WINDOW_MIN)
 
 # ------------------------
