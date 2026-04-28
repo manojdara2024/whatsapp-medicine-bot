@@ -57,6 +57,9 @@ with psycopg.connect(DATABASE_URL) as conn:
 
 print("📋 medicines:", medicines)
 
+
+WINDOW = timedelta(minutes=2)
+
 for name, med_time in medicines:
     try:
         hh, mm = map(int, med_time.split(":"))
@@ -64,8 +67,6 @@ for name, med_time in medicines:
         print(f"⚠️ Invalid time format for {name}: {med_time}")
         continue
 
-
-    # medicine datetime today
     med_dt = now.replace(
         hour=hh,
         minute=mm,
@@ -73,17 +74,15 @@ for name, med_time in medicines:
         microsecond=0
     )
 
-    # 10‑minute‑before datetime
     before_dt = med_dt - timedelta(minutes=10)
 
-    # ---- 10‑minute‑before window ----
-    if before_dt <= now < before_dt + timedelta(minutes=1):
+    if before_dt <= now < before_dt + WINDOW:
         print(f"🔔 Sending 10‑min reminder for {name}")
         send_whatsapp(f"⏰ Reminder: Take {name} in 10 minutes")
 
-    # ---- exact‑time window ----
-    elif med_dt <= now < med_dt + timedelta(minutes=1):
+    elif med_dt <= now < med_dt + WINDOW:
         print(f"💊 Sending exact‑time reminder for {name}")
         send_whatsapp(f"💊 Time to take {name}")
+
 
 print("✅ CRON RUN COMPLETE")
