@@ -9,6 +9,7 @@ TEST_NUMBER = os.environ["TEST_NUMBER"]
 DATABASE_URL = os.environ["DATABASE_URL"]
 
 TIMEZONE = os.environ.get("TIMEZONE", "Australia/Sydney")
+print("✅ NEW VERSION RUNNING")
 
 # Alert behavior
 ALERT_OFFSET_MIN = int(os.environ.get("ALERT_OFFSET_MIN", "10"))  # 10 min before
