@@ -2,6 +2,7 @@
 import os
 import requests
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 print("✅ NEW VERSION RUNNING")
 print("🟢 CRON START UTC:", datetime.utcnow().isoformat())
