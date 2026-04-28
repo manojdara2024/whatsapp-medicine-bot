@@ -68,7 +68,10 @@ def log_sent(conn, med_name: str, kind: str, reminder_date):
 # ------------------------
 # Main
 # ------------------------
-print("🟢 CRON START UTC:", datetime.utcnow().isoformat())
+
+from datetime import datetime, UTC
+print("🟢 CRON START UTC:", datetime.now(UTC).isoformat())
+
 
 now = datetime.now(ZoneInfo(TIMEZONE))
 print("🕒 Local now:", now.isoformat(), "TZ=", TIMEZONE)
