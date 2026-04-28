@@ -46,25 +46,24 @@ print(f"🕒 Local now: {now.isoformat()} TZ= {TIMEZONE}")
 # ======================
 # Database read
 # ======================
+
 with psycopg.connect(DATABASE_URL) as conn:
     with conn.cursor() as cur:
         cur.execute("""
-            SELECT medicine_name, time
+            SELECT name, time_hhmm
             FROM public.medicines
         """)
         medicines = cur.fetchall()
 
 print("📋 medicines:", medicines)
 
-# ======================
-# Reminder logic
-# ======================
 for name, med_time in medicines:
     try:
         hh, mm = map(int, med_time.split(":"))
     except ValueError:
-        print(f"⚠️ Skipping invalid time format for {name}: {med_time}")
+        print(f"⚠️ Invalid time format for {name}: {med_time}")
         continue
+
 
     # medicine datetime today
     med_dt = now.replace(
