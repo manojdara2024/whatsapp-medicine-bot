@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import os
 import requests
-
 from datetime import datetime
 
+print("✅ NEW VERSION RUNNING")
 print("🟢 CRON START UTC:", datetime.utcnow().isoformat())
+
 
 # ------------------------
 ACCESS_TOKEN = os.environ["WHATSAPP_ACCESS_TOKEN"]
@@ -13,7 +14,6 @@ TEST_NUMBER = os.environ["TEST_NUMBER"]
 DATABASE_URL = os.environ["DATABASE_URL"]
 
 TIMEZONE = os.environ.get("TIMEZONE", "Australia/Sydney")
-print("✅ NEW VERSION RUNNING")
 
 # Alert behavior
 ALERT_OFFSET_MIN = int(os.environ.get("ALERT_OFFSET_MIN", "10"))  # 10 min before
