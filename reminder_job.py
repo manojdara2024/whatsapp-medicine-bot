@@ -61,17 +61,14 @@ def send_whatsapp_image(image_url: str, caption: str) -> bool:
 
 def build_image_card_url(med_name: str, hhmm: str) -> str:
     title = quote_plus(med_name.upper())
-    time = quote_plus(hhmm)
+    line2 = quote_plus("TIME TO TAKE MEDICINE")
+    time = quote_plus(f"⏰ {hhmm}")
 
     return (
-        "https://res.cloudinary.com/demo/image/upload/"
-        "w_900,h_500,c_pad,b_rgb:ffffff/"
-        f"l_text:arial_60_bold:{title},co_rgb:000000,g_north,y_120/"
-        f"l_text:arial_36:TIME%20TO%20TAKE%20MEDICINE,co_rgb:555555,g_south,y_140/"
-        f"l_text:arial_40:%E2%8F%B0%20{time},co_rgb:000000,g_south,y_60/"
-        "blank.png"
+        "https://res.cloudinary.com/demo/image/text/"
+        f"arial_60_bold:{title}\n{line2}\n{time}.png"
     )
-
+    
 # ------------------------
 # DB helpers
 # ------------------------
