@@ -38,7 +38,7 @@ def send_whatsapp(text: str):
 
 
 
-def send_whatsapp_image(image_url: str, caption: str):
+def send_whatsapp_image(image_url: str, caption: str) -> bool:
     url = f"https://graph.facebook.com/{GRAPH_VERSION}/{PHONE_NUMBER_ID}/messages"
     headers = {
         "Authorization": f"Bearer {ACCESS_TOKEN}",
@@ -55,21 +55,28 @@ def send_whatsapp_image(image_url: str, caption: str):
     }
 
     resp = requests.post(url, headers=headers, json=payload)
+
     print("WhatsApp image response:", resp.status_code)
 
+    return resp.status_code == 200
+
+
+
+from urllib.parse import quote_plus
 
 def build_image_card_url(med_name: str, hhmm: str) -> str:
-    # Example using an image-card service (placeholder)
-    # You can change styling later without touching reminder logic
-    from urllib.parse import quote_plus
-
-    name = quote_plus(med_name.upper())
+    title = quote_plus(med_name.upper())
     time = quote_plus(hhmm)
 
     return (
-        "https://your-image-card-service/render?"
-        f"title={name}&subtitle=Time+to+take+your+medicine&time={time}"
+        "https://res.cloudinary.com/demo/image/upload/"
+        "w_900,h_500,c_fill,b_rgb:ffffff/"
+        f"l_text:arial_60_bold:{title},co_rgb:000000,c_fit,w_800/"
+        f"l_text:arial_36:TIME%20TO%20TAKE%20MEDICINE,co_rgb:555555,g_south,y_140/"
+        f"l_text:arial_40:%E2%8F%B0%20{time},co_rgb:000000,g_south,y_60/"
+        "sample.png"
     )
+
 
 
 # ------------------------
@@ -130,30 +137,47 @@ with psycopg.connect(DATABASE_URL) as conn:
         med_dt = now.replace(hour=h, minute=m, second=0, microsecond=0)
         before_dt = med_dt - timedelta(minutes=ALERT_OFFSET_MIN)
 
-        # 10-min before window
-        if before_dt <= now < before_dt + WINDOW:
-            if not already_sent(conn, name, "before", reminder_date):
-                print(f"🔔 Sending 10‑min reminder for {name}")
-                image_url = build_image_card_url(name, hhmm)
-                print("🖼 Image URL:", image_url)
-                send_whatsapp_image(
-                image_url,
-                caption=f"💊 {name}\n⏰ In {ALERT_OFFSET_MIN} minutes"
-                )
-                log_sent(conn, name, "before", reminder_date)
-            else:
-                print(f"⏭️ Skipping duplicate BEFORE reminder for {name}")
+    # 10‑min before window
+    if before_dt <= now < before_dt + WINDOW:
+        if not already_sent(conn, name, "before", reminder_date):
+        print(f"🔔 Sending 10‑min reminder for {name}")
+        image_url = build_image_card_url(name, hhmm)
+        print("🖼 Image URL:", image_url)
 
-        # exact time window
-        elif med_dt <= now < med_dt + WINDOW:
-            if not already_sent(conn, name, "exact", reminder_date):
-                print(f"💊 Sending exact‑time reminder for {name}")
-                image_url = build_image_card_url(name, hhmm)
-                print("🖼 Image URL:", image_url)
-                send_whatsapp_image(
-                image_url,
-                caption=f"💊 {name}\n⏰ Time to take now"
-                )
-                log_sent(conn, name, "exact", reminder_date)
-            else:
-                print(f"⏭️ Skipping duplicate EXACT reminder for {name}")
+        sent = send_whatsapp_image(
+            image_url,
+            caption=f"💊 {name}\n⏰ In {ALERT_OFFSET_MIN} minutes"
+        )
+
+        if not sent:
+            print("⚠️ Image failed, falling back to text")
+            send_whatsapp_text(
+                f"💊 {name}\n⏰ In {ALERT_OFFSET_MIN} minutes"
+            )
+
+        log_sent(conn, name, "before", reminder_date)
+    else:
+        print(f"⏭️ Skipping duplicate BEFORE reminder for {name}")
+
+# exact time window
+if med_dt <= now < med_dt + WINDOW:
+    if not already_sent(conn, name, "exact", reminder_date):
+        print(f"💊 Sending exact‑time reminder for {name}")
+
+        image_url = build_image_card_url(name, hhmm)
+        print("🖼 Image URL:", image_url)
+
+        sent = send_whatsapp_image(
+            image_url,
+            caption=f"💊 {name}\n⏰ Time to take now"
+        )
+
+        if not sent:
+            print("⚠️ Image failed, falling back to text")
+            send_whatsapp_text(
+                f"💊 {name}\n⏰ Time to take now"
+            )
+
+        log_sent(conn, name, "exact", reminder_date)
+    else:
+        print(f"⏭️ Skipping duplicate EXACT reminder for {name}")
