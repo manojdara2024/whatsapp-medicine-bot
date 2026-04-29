@@ -24,7 +24,7 @@ WINDOW = timedelta(minutes=WINDOW_MIN)
 # ------------------------
 # WhatsApp send (TEXT ONLY)
 # ------------------------
-def send_whatsapp(text: str):
+def send_whatsapp(text: str) -> bool:
     url = f"https://graph.facebook.com/{GRAPH_VERSION}/{PHONE_NUMBER_ID}/messages"
     headers = {
         "Authorization": f"Bearer {ACCESS_TOKEN}",
@@ -43,13 +43,12 @@ def send_whatsapp(text: str):
 
 
 # ------------------------
-# Text Card Builder (Option 2)
+# Text Card Builder (Option 2 + extras)
 # ------------------------
 def build_text_card(med_name: str, hhmm: str, mode: str) -> str:
     """
     mode = "before" | "exact"
     """
-
     if mode == "exact":
         header = "🚨 💊 *MEDICINE REMINDER* 🚨"
         action = "✅ Take now"
@@ -76,7 +75,6 @@ def build_text_card(med_name: str, hhmm: str, mode: str) -> str:
         parts.append(ack)
 
     parts.append("———————————————")
-
     return "\n".join(parts)
 
 
@@ -94,7 +92,6 @@ def ensure_tables(conn):
             );
         """)
 
-
 def already_sent(conn, med_name: str, kind: str, reminder_date):
     with conn.cursor() as cur:
         cur.execute(
@@ -109,7 +106,6 @@ def already_sent(conn, med_name: str, kind: str, reminder_date):
             (reminder_date, med_name, kind),
         )
         return cur.fetchone() is not None
-
 
 def log_sent(conn, med_name: str, kind: str, reminder_date):
     with conn.cursor() as cur:
@@ -143,35 +139,22 @@ with psycopg.connect(DATABASE_URL) as conn:
     print("📋 medicines:", medicines)
 
     for name, hhmm in medicines:
-        # Build today's dose datetime
         h, m = map(int, hhmm.split(":"))
         med_dt = now.replace(hour=h, minute=m, second=0, microsecond=0)
         before_dt = med_dt - timedelta(minutes=ALERT_OFFSET_MIN)
 
-        # ------------------------
         # 10‑min BEFORE reminder
-        # ------------------------
         if before_dt <= now < before_dt + WINDOW:
             if not already_sent(conn, name, "before", reminder_date):
                 print(f"🔔 Sending 10‑min reminder for {name}")
-
                 msg = build_text_card(name, hhmm, mode="before")
                 send_whatsapp(msg)
-
                 log_sent(conn, name, "before", reminder_date)
-            else:
-                print(f"⏭️ Skipping duplicate BEFORE reminder for {name}")
 
-        # ------------------------
         # EXACT‑TIME reminder
-        # ------------------------
         if med_dt <= now < med_dt + WINDOW:
             if not already_sent(conn, name, "exact", reminder_date):
                 print(f"💊 Sending exact‑time reminder for {name}")
-
                 msg = build_text_card(name, hhmm, mode="exact")
                 send_whatsapp(msg)
-
                 log_sent(conn, name, "exact", reminder_date)
-            else:
-                print(f"⏭️ Skipping duplicate EXACT reminder for {name}")
