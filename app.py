@@ -19,7 +19,7 @@ ALERT_OFFSET_MINUTES = int(os.environ.get("ALERT_OFFSET_MINUTES", "10"))
 DATABASE_URL = os.environ["DATABASE_URL"]
 
 def get_conn():
-    return psycopg.connect(DATABASE_URL)  # supports postgresql:// URLs [2](https://www.psycopg.org/psycopg3/docs/api/connections.html)
+    return psycopg.connect(DATABASE_URL)
 
 def init_db():
     with get_conn() as conn:
@@ -83,10 +83,22 @@ def receive():
 
         text = msg["text"]["body"].strip()
 
+        # ✅ ✅ ✅ DONE ACKNOWLEDGEMENT (ONLY ADDITION)
+        if text.upper().startswith("DONE"):
+            send_message(
+                "✅ *Great job!* You’ve taken your medicine 💪\n"
+                "💧 Keep up the healthy habit!"
+            )
+            return "OK", 200
+
+        # ---------- existing commands ----------
         if text.upper().startswith("ADD "):
             parts = text.split()
             if len(parts) != 3:
-                send_message('❗ Usage: ADD <MedicineName> <HH:MM>\nExample: ADD Metformin 08:00')
+                send_message(
+                    "❗ Usage: ADD <MedicineName> <HH:MM>\n"
+                    "Example: ADD Metformin 08:00"
+                )
                 return "OK", 200
 
             _, name, time_str = parts
@@ -131,31 +143,6 @@ def receive():
     except Exception as e:
         send_message(f"⚠️ Error: {e}")
         return "OK", 200
-
-def reminder_loop():
-    tz = ZoneInfo(TIMEZONE)
-    sent_cache = set()
-
-    while True:
-        now = datetime.now(tz)
-        now_hhmm = now.strftime("%H:%M")
-
-        meds = list_meds()
-        for name, dose_time in meds:
-            try:
-                dose_dt = datetime.combine(now.date(), datetime.strptime(dose_time, "%H:%M").time(), tzinfo=tz)
-                remind_dt = dose_dt - timedelta(minutes=ALERT_OFFSET_MINUTES)
-                if abs((now - remind_dt).total_seconds()) <= 30:
-                    key = (now.date().isoformat(), name, dose_time)
-                    if key not in sent_cache:
-                        send_message(f"⏰ Reminder: Take {name} at {dose_time}")
-                        sent_cache.add(key)
-            except Exception:
-                continue
-
-        time.sleep(30)
-
-#Thread(target=reminder_loop, daemon=True).start()
 
 @app.route("/", methods=["GET"])
 def home():
