@@ -59,15 +59,19 @@ def send_whatsapp_image(image_url: str, caption: str) -> bool:
     return resp.status_code == 200
 
 
+
 def build_image_card_url(med_name: str, hhmm: str) -> str:
-    title = quote_plus(med_name.upper())
-    line2 = quote_plus("TIME TO TAKE MEDICINE")
-    time = quote_plus(f"⏰ {hhmm}")
+    text = quote_plus(
+        f"{med_name.upper()}\n"
+        f"TIME TO TAKE MEDICINE\n"
+        f"⏰ {hhmm}"
+    )
 
     return (
         "https://res.cloudinary.com/demo/image/text/"
-        f"arial_60_bold:{title}\n{line2}\n{time}.png"
+        f"arial_60_bold:{text}.png"
     )
+
     
 # ------------------------
 # DB helpers
