@@ -65,11 +65,11 @@ def build_image_card_url(med_name: str, hhmm: str) -> str:
 
     return (
         "https://res.cloudinary.com/demo/image/upload/"
-        "w_900,h_500,c_fill,b_rgb:ffffff/"
-        f"l_text:arial_60_bold:{title},co_rgb:000000,c_fit,w_800/"
+        "w_900,h_500,c_pad,b_rgb:ffffff/"
+        f"l_text:arial_60_bold:{title},co_rgb:000000,g_north,y_120/"
         f"l_text:arial_36:TIME%20TO%20TAKE%20MEDICINE,co_rgb:555555,g_south,y_140/"
         f"l_text:arial_40:%E2%8F%B0%20{time},co_rgb:000000,g_south,y_60/"
-        "sample.png"
+        "blank.png"
     )
 
 # ------------------------
