@@ -140,14 +140,14 @@ with psycopg.connect(DATABASE_URL) as conn:
     # 10‑min before window
     if before_dt <= now < before_dt + WINDOW:
         if not already_sent(conn, name, "before", reminder_date):
-        print(f"🔔 Sending 10‑min reminder for {name}")
-        image_url = build_image_card_url(name, hhmm)
-        print("🖼 Image URL:", image_url)
+            print(f"🔔 Sending 10‑min reminder for {name}")
+            image_url = build_image_card_url(name, hhmm)
+            print("🖼 Image URL:", image_url)
 
-        sent = send_whatsapp_image(
+            sent = send_whatsapp_image(
             image_url,
             caption=f"💊 {name}\n⏰ In {ALERT_OFFSET_MIN} minutes"
-        )
+            )
 
         if not sent:
             print("⚠️ Image failed, falling back to text")
