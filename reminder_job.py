@@ -36,6 +36,42 @@ def send_whatsapp(text: str):
     resp = requests.post(url, headers=headers, json=payload)
     print("WhatsApp response:", resp.status_code, resp.text)
 
+
+
+def send_whatsapp_image(image_url: str, caption: str):
+    url = f"https://graph.facebook.com/{GRAPH_VERSION}/{PHONE_NUMBER_ID}/messages"
+    headers = {
+        "Authorization": f"Bearer {ACCESS_TOKEN}",
+        "Content-Type": "application/json",
+    }
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": TEST_NUMBER,
+        "type": "image",
+        "image": {
+            "link": image_url,
+            "caption": caption,
+        },
+    }
+
+    resp = requests.post(url, headers=headers, json=payload)
+    print("WhatsApp image response:", resp.status_code)
+
+
+def build_image_card_url(med_name: str, hhmm: str) -> str:
+    # Example using an image-card service (placeholder)
+    # You can change styling later without touching reminder logic
+    from urllib.parse import quote_plus
+
+    name = quote_plus(med_name.upper())
+    time = quote_plus(hhmm)
+
+    return (
+        "https://your-image-card-service/render?"
+        f"title={name}&subtitle=Time+to+take+your+medicine&time={time}"
+    )
+
+
 # ------------------------
 # DB helpers
 # ------------------------
@@ -49,7 +85,7 @@ def ensure_tables(conn):
                 PRIMARY KEY (reminder_date, med_name, kind)
             );
         """)
-
+    
 def already_sent(conn, med_name: str, kind: str, reminder_date):
     with conn.cursor() as cur:
         cur.execute(
@@ -98,7 +134,11 @@ with psycopg.connect(DATABASE_URL) as conn:
         if before_dt <= now < before_dt + WINDOW:
             if not already_sent(conn, name, "before", reminder_date):
                 print(f"🔔 Sending 10‑min reminder for {name}")
-                send_whatsapp(f"⏰ Reminder: Take {name} in {ALERT_OFFSET_MIN} minutes")
+                image_url = build_image_card_url(name, hhmm)
+                send_whatsapp_image(
+                image_url,
+                caption=f"💊 {name}\n⏰ In {ALERT_OFFSET_MIN} minutes"
+                )
                 log_sent(conn, name, "before", reminder_date)
             else:
                 print(f"⏭️ Skipping duplicate BEFORE reminder for {name}")
@@ -107,7 +147,11 @@ with psycopg.connect(DATABASE_URL) as conn:
         elif med_dt <= now < med_dt + WINDOW:
             if not already_sent(conn, name, "exact", reminder_date):
                 print(f"💊 Sending exact‑time reminder for {name}")
-                send_whatsapp(f"💊 Time to take {name}")
+                image_url = build_image_card_url(name, hhmm)
+                send_whatsapp_image(
+                image_url,
+                caption=f"💊 {name}\n⏰ Time to take now"
+                )
                 log_sent(conn, name, "exact", reminder_date)
             else:
                 print(f"⏭️ Skipping duplicate EXACT reminder for {name}")
