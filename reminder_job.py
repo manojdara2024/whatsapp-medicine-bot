@@ -24,7 +24,7 @@ WINDOW = timedelta(minutes=WINDOW_MIN)
 # ------------------------
 # WhatsApp send (TEXT ONLY)
 # ------------------------
-def send_whatsapp(text: str) -> bool:
+def send_whatsapp(text: str):
     url = f"https://graph.facebook.com/{GRAPH_VERSION}/{PHONE_NUMBER_ID}/messages"
     headers = {
         "Authorization": f"Bearer {ACCESS_TOKEN}",
@@ -43,12 +43,13 @@ def send_whatsapp(text: str) -> bool:
 
 
 # ------------------------
-# Text Card Builder (Option 2 + extras)
+# Text Card Builder (Option 2)
 # ------------------------
 def build_text_card(med_name: str, hhmm: str, mode: str) -> str:
     """
     mode = "before" | "exact"
     """
+
     if mode == "exact":
         header = "🚨 💊 *MEDICINE REMINDER* 🚨"
         action = "✅ Take now"
@@ -147,14 +148,12 @@ with psycopg.connect(DATABASE_URL) as conn:
         if before_dt <= now < before_dt + WINDOW:
             if not already_sent(conn, name, "before", reminder_date):
                 print(f"🔔 Sending 10‑min reminder for {name}")
-                msg = build_text_card(name, hhmm, mode="before")
-                send_whatsapp(msg)
+                send_whatsapp(build_text_card(name, hhmm, "before"))
                 log_sent(conn, name, "before", reminder_date)
 
         # EXACT‑TIME reminder
         if med_dt <= now < med_dt + WINDOW:
             if not already_sent(conn, name, "exact", reminder_date):
                 print(f"💊 Sending exact‑time reminder for {name}")
-                msg = build_text_card(name, hhmm, mode="exact")
-                send_whatsapp(msg)
+                send_whatsapp(build_text_card(name, hhmm, "exact"))
                 log_sent(conn, name, "exact", reminder_date)
