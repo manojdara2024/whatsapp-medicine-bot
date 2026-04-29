@@ -3,8 +3,9 @@
 import os
 import requests
 import psycopg
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from zoneinfo import ZoneInfo
+from urllib.parse import quote_plus
 
 # ------------------------
 # Env vars (Cron Job)
@@ -37,7 +38,6 @@ def send_whatsapp(text: str):
     print("WhatsApp response:", resp.status_code, resp.text)
 
 
-
 def send_whatsapp_image(image_url: str, caption: str) -> bool:
     url = f"https://graph.facebook.com/{GRAPH_VERSION}/{PHONE_NUMBER_ID}/messages"
     headers = {
@@ -55,14 +55,9 @@ def send_whatsapp_image(image_url: str, caption: str) -> bool:
     }
 
     resp = requests.post(url, headers=headers, json=payload)
-
-    print("WhatsApp image response:", resp.status_code)
-
+    print("WhatsApp image response:", resp.status_code, resp.text)
     return resp.status_code == 200
 
-
-
-from urllib.parse import quote_plus
 
 def build_image_card_url(med_name: str, hhmm: str) -> str:
     title = quote_plus(med_name.upper())
@@ -77,8 +72,6 @@ def build_image_card_url(med_name: str, hhmm: str) -> str:
         "sample.png"
     )
 
-
-
 # ------------------------
 # DB helpers
 # ------------------------
@@ -92,7 +85,7 @@ def ensure_tables(conn):
                 PRIMARY KEY (reminder_date, med_name, kind)
             );
         """)
-    
+
 def already_sent(conn, med_name: str, kind: str, reminder_date):
     with conn.cursor() as cur:
         cur.execute(
@@ -111,10 +104,7 @@ def log_sent(conn, med_name: str, kind: str, reminder_date):
 # ------------------------
 # Main
 # ------------------------
-
-from datetime import datetime, UTC
 print("🟢 CRON START UTC:", datetime.now(UTC).isoformat())
-
 
 now = datetime.now(ZoneInfo(TIMEZONE))
 print("🕒 Local now:", now.isoformat(), "TZ=", TIMEZONE)
@@ -137,47 +127,49 @@ with psycopg.connect(DATABASE_URL) as conn:
         med_dt = now.replace(hour=h, minute=m, second=0, microsecond=0)
         before_dt = med_dt - timedelta(minutes=ALERT_OFFSET_MIN)
 
-    # 10‑min before window
-    if before_dt <= now < before_dt + WINDOW:
-        if not already_sent(conn, name, "before", reminder_date):
-            print(f"🔔 Sending 10‑min reminder for {name}")
-            image_url = build_image_card_url(name, hhmm)
-            print("🖼 Image URL:", image_url)
+        # ------------------------
+        # 10-min before window
+        # ------------------------
+        if before_dt <= now < before_dt + WINDOW:
+            if not already_sent(conn, name, "before", reminder_date):
+                print(f"🔔 Sending 10‑min reminder for {name}")
 
-            sent = send_whatsapp_image(
-            image_url,
-            caption=f"💊 {name}\n⏰ In {ALERT_OFFSET_MIN} minutes"
-            )
+                image_url = build_image_card_url(name, hhmm)
+                print("🖼 Image URL:", image_url)
 
-        if not sent:
-            print("⚠️ Image failed, falling back to text")
-            send_whatsapp_text(
-                f"💊 {name}\n⏰ In {ALERT_OFFSET_MIN} minutes"
-            )
+                sent = send_whatsapp_image(
+                    image_url,
+                    caption=f"💊 {name}\n⏰ In {ALERT_OFFSET_MIN} minutes"
+                )
 
-        log_sent(conn, name, "before", reminder_date)
-    else:
-        print(f"⏭️ Skipping duplicate BEFORE reminder for {name}")
+                if not sent:
+                    print("⚠️ Image failed, falling back to text")
+                    send_whatsapp(f"💊 {name}\n⏰ In {ALERT_OFFSET_MIN} minutes")
 
-# exact time window
-if med_dt <= now < med_dt + WINDOW:
-    if not already_sent(conn, name, "exact", reminder_date):
-        print(f"💊 Sending exact‑time reminder for {name}")
+                log_sent(conn, name, "before", reminder_date)
+            else:
+                print(f"⏭️ Skipping duplicate BEFORE reminder for {name}")
 
-        image_url = build_image_card_url(name, hhmm)
-        print("🖼 Image URL:", image_url)
+        # ------------------------
+        # exact time window
+        # NOTE: use IF (not ELIF) so BEFORE doesn't block EXACT in edge cases
+        # ------------------------
+        if med_dt <= now < med_dt + WINDOW:
+            if not already_sent(conn, name, "exact", reminder_date):
+                print(f"💊 Sending exact‑time reminder for {name}")
 
-        sent = send_whatsapp_image(
-            image_url,
-            caption=f"💊 {name}\n⏰ Time to take now"
-        )
+                image_url = build_image_card_url(name, hhmm)
+                print("🖼 Image URL:", image_url)
 
-        if not sent:
-            print("⚠️ Image failed, falling back to text")
-            send_whatsapp_text(
-                f"💊 {name}\n⏰ Time to take now"
-            )
+                sent = send_whatsapp_image(
+                    image_url,
+                    caption=f"💊 {name}\n⏰ Time to take now"
+                )
 
-        log_sent(conn, name, "exact", reminder_date)
-    else:
-        print(f"⏭️ Skipping duplicate EXACT reminder for {name}")
+                if not sent:
+                    print("⚠️ Image failed, falling back to text")
+                    send_whatsapp(f"💊 {name}\n⏰ Time to take now")
+
+                log_sent(conn, name, "exact", reminder_date)
+            else:
+                print(f"⏭️ Skipping duplicate EXACT reminder for {name}")
