@@ -53,7 +53,9 @@ def send_message(text: str, to_number: str = None):
         "text": {"body": text}
     }
     requests.post(url, headers=headers, json=payload)
-
+    
+print("WhatsApp Status:", response.status_code)
+print("WhatsApp Response:", response.text)
 
 @app.route("/webhook", methods=["GET"])
 def verify():
