@@ -52,11 +52,13 @@ def send_message(text: str, to_number: str = None):
         "type": "text",
         "text": {"body": text}
     }
-   
-response =  requests.post(url, headers=headers, json=payload)
-    
-print("WhatsApp Status:", response.status_code)
-print("WhatsApp Response:", response.text)
+    response =  requests.post(
+        url,
+        headers=headers,
+        json=payload
+    )
+    print("WhatsApp Status:", response.status_code)
+    print("WhatsApp Response:", response.text)
 
 @app.route("/webhook", methods=["GET"])
 def verify():
