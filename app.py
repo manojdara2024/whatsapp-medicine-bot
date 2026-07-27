@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 ACCESS_TOKEN = os.environ["WHATSAPP_ACCESS_TOKEN"]
 PHONE_NUMBER_ID = os.environ["WHATSAPP_PHONE_NUMBER_ID"]
-VERIFY_TOKEN = os.environ["WHATSAPP_VERIFY_TOKEN", "test123"]
+VERIFY_TOKEN = os.environ.get["WHATSAPP_VERIFY_TOKEN", "test123"]
 TEST_NUMBER = os.environ["TEST_NUMBER"]
 
 TIMEZONE = os.environ.get("TIMEZONE", "Australia/Sydney")
