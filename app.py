@@ -102,6 +102,8 @@ def clear_meds():
 @app.route("/webhook", methods=["POST"])
 def receive():
     data = request.get_json(silent=True) or {}
+    print("WEBHOOK RECEIVED")
+    print(data)
 
     try:
         value = data["entry"][0]["changes"][0]["value"]
@@ -187,7 +189,7 @@ def receive():
         return "OK", 200
 
     except Exception as e:
-        send_message(f"⚠️ Error: {e}")
+        print("ERROR:", str(e))
         return "OK", 200
 
 
