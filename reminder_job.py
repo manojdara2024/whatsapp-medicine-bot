@@ -95,14 +95,14 @@ def build_text_card(med_name: str, hhmm: str, mode: str) -> str:
 # ------------------------
 def ensure_tables(conn):
 
-    conn.execute("""        
-    CREATE TABLE IF NOT EXISTS medicines (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,         
-    name TEXT NOT NULL, 
-    time_hhmm TEXT NOT NULL     
-    )    
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS medicines (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            time_hhmm TEXT NOT NULL
+        )
     """)
-    
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS reminder_log (
             reminder_date TEXT NOT NULL,
@@ -111,6 +111,7 @@ def ensure_tables(conn):
             PRIMARY KEY (reminder_date, med_name, kind)
         )
     """)
+
     conn.commit()
 
 
