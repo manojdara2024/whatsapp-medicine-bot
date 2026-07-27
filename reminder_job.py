@@ -94,6 +94,15 @@ def build_text_card(med_name: str, hhmm: str, mode: str) -> str:
 # DB helpers
 # ------------------------
 def ensure_tables(conn):
+
+    conn.execute("""        
+    CREATE TABLE IF NOT EXISTS medicines (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,         
+    name TEXT NOT NULL,7            
+    time_hhmm TEXT NOT NULL8        
+    )    
+    """)
+    
     conn.execute("""
         CREATE TABLE IF NOT EXISTS reminder_log (
             reminder_date TEXT NOT NULL,
