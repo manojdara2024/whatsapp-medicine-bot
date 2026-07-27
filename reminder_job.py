@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import os
+import sqlite3
 import requests
-import psycopg
 from datetime import datetime, timedelta, UTC
 from zoneinfo import ZoneInfo
 
@@ -12,7 +12,6 @@ from zoneinfo import ZoneInfo
 ACCESS_TOKEN = os.environ["WHATSAPP_ACCESS_TOKEN"]
 PHONE_NUMBER_ID = os.environ["WHATSAPP_PHONE_NUMBER_ID"]
 TEST_NUMBER = os.environ["TEST_NUMBER"]
-DATABASE_URL = os.environ["DATABASE_URL"]
 
 TIMEZONE = os.environ.get("TIMEZONE", "Australia/Sydney")
 GRAPH_VERSION = os.environ.get("GRAPH_VERSION", "v19.0")
@@ -21,15 +20,24 @@ ALERT_OFFSET_MIN = int(os.environ.get("ALERT_OFFSET_MIN", "10"))  # 10‑min bef
 WINDOW_MIN = int(os.environ.get("WINDOW_MIN", "6"))               # cron drift window
 WINDOW = timedelta(minutes=WINDOW_MIN)
 
+DB_FILE = "medicine.db"
+
+
+def get_conn():
+    return sqlite3.connect(DB_FILE)
+
+
 # ------------------------
 # WhatsApp send (TEXT ONLY)
 # ------------------------
 def send_whatsapp(text: str):
     url = f"https://graph.facebook.com/{GRAPH_VERSION}/{PHONE_NUMBER_ID}/messages"
+
     headers = {
         "Authorization": f"Bearer {ACCESS_TOKEN}",
         "Content-Type": "application/json",
     }
+
     payload = {
         "messaging_product": "whatsapp",
         "to": TEST_NUMBER,
@@ -38,12 +46,13 @@ def send_whatsapp(text: str):
     }
 
     resp = requests.post(url, headers=headers, json=payload)
+
     print("WhatsApp response:", resp.status_code, resp.text)
     return resp.status_code == 200
 
 
 # ------------------------
-# Text Card Builder (Option 2)
+# Text Card Builder
 # ------------------------
 def build_text_card(med_name: str, hhmm: str, mode: str) -> str:
     """
@@ -72,10 +81,12 @@ def build_text_card(med_name: str, hhmm: str, mode: str) -> str:
 
     if habit:
         parts.append(habit)
+
     if ack:
         parts.append(ack)
 
     parts.append("———————————————")
+
     return "\n".join(parts)
 
 
@@ -83,41 +94,44 @@ def build_text_card(med_name: str, hhmm: str, mode: str) -> str:
 # DB helpers
 # ------------------------
 def ensure_tables(conn):
-    with conn.cursor() as cur:
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS reminder_log (
-                reminder_date DATE NOT NULL,
-                med_name TEXT NOT NULL,
-                kind TEXT NOT NULL,
-                PRIMARY KEY (reminder_date, med_name, kind)
-            );
-        """)
-
-def already_sent(conn, med_name: str, kind: str, reminder_date):
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            SELECT 1
-            FROM reminder_log
-            WHERE reminder_date = %s
-              AND med_name = %s
-              AND kind = %s
-            LIMIT 1
-            """,
-            (reminder_date, med_name, kind),
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS reminder_log (
+            reminder_date TEXT NOT NULL,
+            med_name TEXT NOT NULL,
+            kind TEXT NOT NULL,
+            PRIMARY KEY (reminder_date, med_name, kind)
         )
-        return cur.fetchone() is not None
+    """)
+    conn.commit()
 
-def log_sent(conn, med_name: str, kind: str, reminder_date):
-    with conn.cursor() as cur:
-        cur.execute(
-            """
-            INSERT INTO reminder_log (reminder_date, med_name, kind)
-            VALUES (%s, %s, %s)
-            ON CONFLICT DO NOTHING
-            """,
-            (reminder_date, med_name, kind),
-        )
+
+def already_sent(conn, med_name, kind, reminder_date):
+    cur = conn.execute(
+        """
+        SELECT 1
+        FROM reminder_log
+        WHERE reminder_date = ?
+          AND med_name = ?
+          AND kind = ?
+        LIMIT 1
+        """,
+        (str(reminder_date), med_name, kind),
+    )
+
+    return cur.fetchone() is not None
+
+
+def log_sent(conn, med_name, kind, reminder_date):
+    conn.execute(
+        """
+        INSERT OR IGNORE INTO reminder_log
+        (reminder_date, med_name, kind)
+        VALUES (?, ?, ?)
+        """,
+        (str(reminder_date), med_name, kind),
+    )
+
+    conn.commit()
 
 
 # ------------------------
@@ -130,30 +144,71 @@ print("🕒 Local now:", now.isoformat(), "TZ=", TIMEZONE)
 
 reminder_date = now.date()
 
-with psycopg.connect(DATABASE_URL) as conn:
+with get_conn() as conn:
+
     ensure_tables(conn)
 
-    with conn.cursor() as cur:
-        cur.execute("SELECT name, time_hhmm FROM medicines")
-        medicines = cur.fetchall()
+    cur = conn.execute(
+        "SELECT name, time_hhmm FROM medicines"
+    )
+
+    medicines = cur.fetchall()
 
     print("📋 medicines:", medicines)
 
     for name, hhmm in medicines:
+
         h, m = map(int, hhmm.split(":"))
-        med_dt = now.replace(hour=h, minute=m, second=0, microsecond=0)
+
+        med_dt = now.replace(
+            hour=h,
+            minute=m,
+            second=0,
+            microsecond=0
+        )
+
         before_dt = med_dt - timedelta(minutes=ALERT_OFFSET_MIN)
 
         # 10‑min BEFORE reminder
         if before_dt <= now < before_dt + WINDOW:
-            if not already_sent(conn, name, "before", reminder_date):
+
+            if not already_sent(
+                conn,
+                name,
+                "before",
+                reminder_date
+            ):
                 print(f"🔔 Sending 10‑min reminder for {name}")
-                send_whatsapp(build_text_card(name, hhmm, "before"))
-                log_sent(conn, name, "before", reminder_date)
+
+                send_whatsapp(
+                    build_text_card(name, hhmm, "before")
+                )
+
+                log_sent(
+                    conn,
+                    name,
+                    "before",
+                    reminder_date
+                )
 
         # EXACT‑TIME reminder
         if med_dt <= now < med_dt + WINDOW:
-            if not already_sent(conn, name, "exact", reminder_date):
+
+            if not already_sent(
+                conn,
+                name,
+                "exact",
+                reminder_date
+            ):
                 print(f"💊 Sending exact‑time reminder for {name}")
-                send_whatsapp(build_text_card(name, hhmm, "exact"))
-                log_sent(conn, name, "exact", reminder_date)
+
+                send_whatsapp(
+                    build_text_card(name, hhmm, "exact")
+                )
+
+                log_sent(
+                    conn,
+                    name,
+                    "exact",
+                    reminder_date
+                )
