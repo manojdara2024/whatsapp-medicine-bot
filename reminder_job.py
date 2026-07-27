@@ -98,8 +98,8 @@ def ensure_tables(conn):
     conn.execute("""        
     CREATE TABLE IF NOT EXISTS medicines (
     id INTEGER PRIMARY KEY AUTOINCREMENT,         
-    name TEXT NOT NULL,7            
-    time_hhmm TEXT NOT NULL8        
+    name TEXT NOT NULL, 
+    time_hhmm TEXT NOT NULL     
     )    
     """)
     
