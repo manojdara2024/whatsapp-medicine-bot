@@ -57,10 +57,11 @@ def send_message(text: str, to_number: str = None):
         json=payload
     )
 
-    print("WhatsApp Status:", response.status_code)
-    print("WhatsApp Response:", response.text)
+    print("WhatsApp Status:", response.status_code, flush=True)
+    print("WhatsApp Response:", response.text, flush=True)
 
     return response
+
 
 @app.route("/test")
 def test():
@@ -74,10 +75,12 @@ def test():
 def home():
     return "OK", 200
 
+
 @app.route("/webhook", methods=["GET"])
 def verify():
     if request.args.get("hub.verify_token") == VERIFY_TOKEN:
         return request.args.get("hub.challenge"), 200
+
     return "Invalid token", 403
 
 
@@ -116,25 +119,20 @@ def clear_meds():
 @app.route("/webhook", methods=["POST"])
 def receive():
 
-    import sys
-    print("🔥 WEBHOOK RECEIVED", flush=True)
-    print(data, flush=True)
-    sys.stdout.flush()
-
     data = request.get_json(silent=True) or {}
 
-    print(data)
+    print("🔥 WEBHOOK RECEIVED", flush=True)
+    print(data, flush=True)
 
     try:
         value = data["entry"][0]["changes"][0]["value"]
         msgs = value.get("messages")
 
         if not msgs:
-            print("No messages found")
+            print("No messages found", flush=True)
             return "OK", 200
 
         msg = msgs[0]
-
         sender = msg["from"]
 
         if msg.get("type") != "text":
@@ -146,8 +144,8 @@ def receive():
 
         text = msg["text"]["body"].strip()
 
-        print("Received text:", text)
-        print("Sender:", sender)
+        print("Received text:", text, flush=True)
+        print("Sender:", sender, flush=True)
 
         if text.upper().startswith("DONE"):
             send_message(
@@ -242,13 +240,8 @@ def receive():
         return "OK", 200
 
     except Exception as e:
-        print("ERROR:", str(e))
+        print("ERROR:", str(e), flush=True)
         return "OK", 200
-
-
-@app.route("/", methods=["GET"])
-def home():
-    return "OK", 200
 
 
 if __name__ == "__main__":
