@@ -62,6 +62,17 @@ def send_message(text: str, to_number: str = None):
 
     return response
 
+@app.route("/test")
+def test():
+
+    response = send_message("✅ Test message from Render")
+
+    return f"{response.status_code} - {response.text}", 200
+
+
+@app.route("/", methods=["GET"])
+def home():
+    return "OK", 200
 
 @app.route("/webhook", methods=["GET"])
 def verify():
