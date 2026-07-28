@@ -41,24 +41,31 @@ init_db()
 
 def send_message(text: str, to_number: str = None):
     to_number = to_number or TEST_NUMBER
+
     url = f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/messages"
+
     headers = {
         "Authorization": f"Bearer {ACCESS_TOKEN}",
         "Content-Type": "application/json"
     }
+
     payload = {
         "messaging_product": "whatsapp",
         "to": to_number,
         "type": "text",
         "text": {"body": text}
     }
-    response =  requests.post(
+
+    response = requests.post(
         url,
         headers=headers,
         json=payload
     )
+
     print("WhatsApp Status:", response.status_code)
     print("WhatsApp Response:", response.text)
+
+    return response
 
 @app.route("/webhook", methods=["GET"])
 def verify():
