@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 
 from flask import Flask, request
-import requests, os, time
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
-from threading import Thread
+import requests, os
+from datetime import datetime
 import sqlite3
 
 app = Flask(__name__)
@@ -13,9 +11,6 @@ ACCESS_TOKEN = os.environ["WHATSAPP_ACCESS_TOKEN"]
 PHONE_NUMBER_ID = os.environ["WHATSAPP_PHONE_NUMBER_ID"]
 VERIFY_TOKEN = os.environ.get("WHATSAPP_VERIFY_TOKEN", "test123")
 TEST_NUMBER = os.environ["TEST_NUMBER"]
-
-TIMEZONE = os.environ.get("TIMEZONE", "Australia/Sydney")
-ALERT_OFFSET_MINUTES = int(os.environ.get("ALERT_OFFSET_MINUTES", "10"))
 
 DB_FILE = "medicine.db"
 
@@ -67,6 +62,7 @@ def send_message(text: str, to_number: str = None):
 
     return response
 
+
 @app.route("/webhook", methods=["GET"])
 def verify():
     if request.args.get("hub.verify_token") == VERIFY_TOKEN:
@@ -108,8 +104,11 @@ def clear_meds():
 
 @app.route("/webhook", methods=["POST"])
 def receive():
+
+    print("🔥 WEBHOOK RECEIVED")
+
     data = request.get_json(silent=True) or {}
-    print("WEBHOOK RECEIVED")
+
     print(data)
 
     try:
@@ -117,30 +116,40 @@ def receive():
         msgs = value.get("messages")
 
         if not msgs:
+            print("No messages found")
             return "OK", 200
 
         msg = msgs[0]
 
+        sender = msg["from"]
+
         if msg.get("type") != "text":
-            send_message("📷 Non-text received. Use ADD / LIST for now.")
+            send_message(
+                "📷 Non-text received. Use ADD / LIST for now.",
+                sender
+            )
             return "OK", 200
 
         text = msg["text"]["body"].strip()
 
+        print("Received text:", text)
+        print("Sender:", sender)
+
         if text.upper().startswith("DONE"):
             send_message(
-                "✅ *Great job!* You’ve taken your medicine 💪\n"
-                "💧 Keep up the healthy habit!"
+                "✅ Great job! You've taken your medicine 💪",
+                sender
             )
             return "OK", 200
 
         if text.upper().startswith("ADD "):
+
             parts = text.split()
 
             if len(parts) != 3:
                 send_message(
-                    "❗ Usage: ADD <MedicineName> <HH:MM>\n"
-                    "Example: ADD Metformin 08:00"
+                    "Usage: ADD MedicineName HH:MM",
+                    sender
                 )
                 return "OK", 200
 
@@ -150,21 +159,28 @@ def receive():
                 datetime.strptime(time_str, "%H:%M")
             except ValueError:
                 send_message(
-                    "❗ Time must be HH:MM (24-hour). Example: 08:00"
+                    "Time must be HH:MM. Example: 08:00",
+                    sender
                 )
                 return "OK", 200
 
             add_med(name, time_str)
-            send_message(f"✅ Added {name} at {time_str}")
+
+            send_message(
+                f"✅ Added {name} at {time_str}",
+                sender
+            )
+
             return "OK", 200
 
         if text.upper() == "LIST":
+
             meds = list_meds()
 
             if not meds:
                 send_message(
-                    "📋 No medicines added yet.\n"
-                    "Add one using: ADD Metformin 08:00"
+                    "📋 No medicines added yet.",
+                    sender
                 )
                 return "OK", 200
 
@@ -173,26 +189,42 @@ def receive():
             for i, (n, t) in enumerate(meds, start=1):
                 lines.append(f"{i}. {n} at {t}")
 
-            send_message("\n".join(lines))
+            send_message(
+                "\n".join(lines),
+                sender
+            )
+
             return "OK", 200
 
         if text.upper().startswith("DELETE "):
+
             target = text.split(maxsplit=1)[1].strip()
 
-            if not target:
-                send_message("❗ Usage: DELETE <MedicineName>")
-                return "OK", 200
-
             delete_med(target)
-            send_message(f"🗑️ Deleted {target}")
+
+            send_message(
+                f"🗑️ Deleted {target}",
+                sender
+            )
+
             return "OK", 200
 
         if text.upper() == "CLEAR":
+
             clear_meds()
-            send_message("🧹 Cleared all medicines.")
+
+            send_message(
+                "🧹 Cleared all medicines.",
+                sender
+            )
+
             return "OK", 200
 
-        send_message("🤖 Commands: ADD / LIST / DELETE / CLEAR")
+        send_message(
+            "Commands:\nADD\nLIST\nDELETE\nCLEAR",
+            sender
+        )
+
         return "OK", 200
 
     except Exception as e:
