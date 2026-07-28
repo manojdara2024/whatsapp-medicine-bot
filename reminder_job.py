@@ -20,7 +20,7 @@ ALERT_OFFSET_MIN = int(os.environ.get("ALERT_OFFSET_MIN", "10"))  # 10‑min bef
 WINDOW_MIN = int(os.environ.get("WINDOW_MIN", "6"))               # cron drift window
 WINDOW = timedelta(minutes=WINDOW_MIN)
 
-DB_FILE = "/var/data/medicine.db"
+DB_FILE = "medicine.db"
 
 
 def get_conn():
