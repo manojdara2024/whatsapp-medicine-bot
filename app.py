@@ -12,7 +12,7 @@ PHONE_NUMBER_ID = os.environ["WHATSAPP_PHONE_NUMBER_ID"]
 VERIFY_TOKEN = os.environ.get("WHATSAPP_VERIFY_TOKEN", "test123")
 TEST_NUMBER = os.environ["TEST_NUMBER"]
 
-DB_FILE = "medicine.db"
+DB_FILE = "/var/data/medicine.db"
 
 
 def get_conn():
