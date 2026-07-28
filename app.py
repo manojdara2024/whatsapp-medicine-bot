@@ -105,7 +105,10 @@ def clear_meds():
 @app.route("/webhook", methods=["POST"])
 def receive():
 
-    print("🔥 WEBHOOK RECEIVED")
+    import sys
+    print("🔥 WEBHOOK RECEIVED", flush=True)
+    print(data, flush=True)
+    sys.stdout.flush()
 
     data = request.get_json(silent=True) or {}
 
